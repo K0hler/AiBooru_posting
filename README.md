@@ -6,7 +6,7 @@
 
 - Сканирование локальной папки на наличие новых изображений (PNG, JPG, WEBP)
 - Автоматическое тегирование через WD Tagger v3 (локально, без API)
-- Извлечение метаданных Automatic1111 из PNG и добавление в source
+- Извлечение метаданных Automatic1111 из PNG и добавление в AI_metadata
 - Двухшаговая загрузка через AIBooru API
 - Дедупликация по SHA256 — повторно не загружает
 - Автоопределение рейтинга (general/sensitive/questionable/explicit)
@@ -69,11 +69,11 @@ pytest tests/ -v
 
 ## Зависимости
 
-| Пакет | Назначение |
-|---|---|
-| requests | HTTP-запросы к AIBooru API |
-| onnxruntime | Инференс WD Tagger |
-| Pillow | Чтение изображений и метаданных |
-| python-dotenv | Конфигурация из .env |
-| numpy | Обработка тензоров |
-| huggingface_hub | Скачивание модели |
+| Пакет           | Назначение                      |
+| --------------- | ------------------------------- |
+| requests        | HTTP-запросы к AIBooru API      |
+| onnxruntime     | Инференс WD Tagger              |
+| Pillow          | Чтение изображений и метаданных |
+| python-dotenv   | Конфигурация из .env            |
+| numpy           | Обработка тензоров              |
+| huggingface_hub | Скачивание модели               |
