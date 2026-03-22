@@ -1,4 +1,6 @@
+import os
 import time
+
 import requests
 
 BASE_URL = "https://aibooru.online"
@@ -23,12 +25,13 @@ class AIBooruUploader:
     def upload_file(
         self, file_path: str, max_retries: int = 3
     ) -> int:
+        filename = os.path.basename(file_path)
         for attempt in range(max_retries):
             with open(file_path, "rb") as f:
                 r = requests.post(
                     f"{BASE_URL}/uploads.json",
                     auth=self.auth,
-                    files={"upload[files][0]": f},
+                    files={"upload[files][0]": (filename, f, "image/png")},
                     timeout=60,
                 )
             if r.status_code == 429:
@@ -65,7 +68,6 @@ class AIBooruUploader:
         media_asset_id: int,
         tags: str,
         rating: str,
-        source: str = "",
         max_retries: int = 3,
     ) -> int:
         payload = {
@@ -73,8 +75,6 @@ class AIBooruUploader:
             "post[tag_string]": tags,
             "post[rating]": rating,
         }
-        if source:
-            payload["post[source]"] = source
 
         for attempt in range(max_retries):
             r = requests.post(

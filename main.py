@@ -7,7 +7,6 @@ from PIL import Image
 from config import load_config
 from scanner import scan_for_new_images, count_images, mark_as_posted
 from tagger import WDTagger
-from metadata import extract_a1111_metadata
 from uploader import AIBooruUploader
 
 MIN_TAGS = 5
@@ -68,9 +67,6 @@ def main():
                 skipped += 1
                 continue
 
-            # Metadata
-            source = extract_a1111_metadata(path)
-
             # Upload file (step 1)
             tag_string = " ".join(tags)
             upload_id = uploader.upload_file(path)
@@ -83,7 +79,6 @@ def main():
                 media_asset_id=media_asset_id,
                 tags=tag_string,
                 rating=rating,
-                source=source,
             )
 
             mark_as_posted(POSTED_FILE, file_hash, name)

@@ -38,7 +38,6 @@ def test_create_post_success(uploader):
             media_asset_id=99,
             tags="1girl blue_hair",
             rating="s",
-            source="test prompt",
         )
         assert post_id == 100
 
