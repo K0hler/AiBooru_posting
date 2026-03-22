@@ -1,4 +1,4 @@
 @echo off
 cd /d "%~dp0"
-python main.py
+H:\miniconda3\python.exe main.py
 pause
