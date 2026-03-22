@@ -1,7 +1,11 @@
 import os
 import time
+from typing import TYPE_CHECKING
 
 import requests
+
+if TYPE_CHECKING:
+    from metadata import AIMetadata
 
 BASE_URL = "https://aibooru.online"
 
@@ -81,6 +85,7 @@ class AIBooruUploader:
                 f"{BASE_URL}/posts.json",
                 auth=self.auth,
                 data=payload,
+                headers={"Accept": "application/json"},
                 timeout=30,
             )
             if r.status_code == 429:
@@ -93,3 +98,28 @@ class AIBooruUploader:
             return r.json().get("id", 0)
 
         raise RuntimeError(f"Не удалось создать пост после {max_retries} попыток")
+
+    def set_ai_metadata(self, post_id: int, ai_metadata: "AIMetadata") -> None:
+        payload = {
+            "post[ai_metadata][prompt]": ai_metadata.prompt,
+            "post[ai_metadata][negative_prompt]": ai_metadata.negative_prompt,
+        }
+        if ai_metadata.sampler:
+            payload["post[ai_metadata][sampler]"] = ai_metadata.sampler
+        if ai_metadata.seed:
+            payload["post[ai_metadata][seed]"] = ai_metadata.seed
+        if ai_metadata.steps:
+            payload["post[ai_metadata][steps]"] = ai_metadata.steps
+        if ai_metadata.cfg_scale:
+            payload["post[ai_metadata][cfg_scale]"] = ai_metadata.cfg_scale
+        if ai_metadata.model_hash:
+            payload["post[ai_metadata][model_hash]"] = ai_metadata.model_hash
+
+        r = requests.put(
+            f"{BASE_URL}/posts/{post_id}/ai_metadata/create_or_update.json",
+            auth=self.auth,
+            data=payload,
+            timeout=30,
+        )
+        if r.status_code not in (200, 204):
+            print(f"  Предупреждение: не удалось установить AI metadata ({r.status_code})")

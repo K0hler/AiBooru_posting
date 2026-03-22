@@ -5,6 +5,7 @@ import time
 from PIL import Image
 
 from config import load_config
+from metadata import extract_a1111_metadata
 from scanner import scan_for_new_images, count_images, mark_as_posted
 from tagger import WDTagger
 from uploader import AIBooruUploader
@@ -67,6 +68,9 @@ def main():
                 skipped += 1
                 continue
 
+            # Extract AI metadata
+            ai_meta = extract_a1111_metadata(path)
+
             # Upload file (step 1)
             tag_string = " ".join(tags)
             upload_id = uploader.upload_file(path)
@@ -80,6 +84,10 @@ def main():
                 tags=tag_string,
                 rating=rating,
             )
+
+            # Set AI metadata (step 3)
+            if ai_meta.is_present():
+                uploader.set_ai_metadata(post_id, ai_meta)
 
             mark_as_posted(POSTED_FILE, file_hash, name)
             print(f"{prefix} -- {len(tags)} тегов, rating: {rating} -- загружено OK")
