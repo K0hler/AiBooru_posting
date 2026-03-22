@@ -27,7 +27,7 @@ def test_upload_file_returns_id(uploader):
             status_code=201,
             json=lambda: {"id": 42},
         )
-        upload_id = uploader.upload_file("test.png", source="test prompt")
+        upload_id = uploader.upload_file("test.png")
         assert upload_id == 42
 
 

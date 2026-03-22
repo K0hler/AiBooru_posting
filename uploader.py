@@ -21,19 +21,14 @@ class AIBooruUploader:
             return False
 
     def upload_file(
-        self, file_path: str, source: str = "", max_retries: int = 3
+        self, file_path: str, max_retries: int = 3
     ) -> int:
-        data = {}
-        if source:
-            data["upload[source]"] = source
-
         for attempt in range(max_retries):
             with open(file_path, "rb") as f:
                 r = requests.post(
                     f"{BASE_URL}/uploads.json",
                     auth=self.auth,
                     files={"upload[files][0]": f},
-                    data=data,
                     timeout=60,
                 )
             if r.status_code == 429:
@@ -41,7 +36,8 @@ class AIBooruUploader:
                 print(f"  Rate limit, ожидание {wait} сек...")
                 time.sleep(wait)
                 continue
-            r.raise_for_status()
+            if not r.ok:
+                raise RuntimeError(f"Upload failed ({r.status_code}): {r.text}")
             return r.json()["id"]
 
         raise RuntimeError(f"Не удалось загрузить файл после {max_retries} попыток")
@@ -73,7 +69,7 @@ class AIBooruUploader:
         max_retries: int = 3,
     ) -> int:
         payload = {
-            "post[upload_media_asset_id]": media_asset_id,
+            "upload_media_asset_id": media_asset_id,
             "post[tag_string]": tags,
             "post[rating]": rating,
         }
@@ -92,7 +88,8 @@ class AIBooruUploader:
                 print(f"  Rate limit, ожидание {wait} сек...")
                 time.sleep(wait)
                 continue
-            r.raise_for_status()
+            if not r.ok:
+                raise RuntimeError(f"Create post failed ({r.status_code}): {r.text}")
             return r.json().get("id", 0)
 
         raise RuntimeError(f"Не удалось создать пост после {max_retries} попыток")

@@ -73,7 +73,7 @@ def main():
 
             # Upload file (step 1)
             tag_string = " ".join(tags)
-            upload_id = uploader.upload_file(path, source=source)
+            upload_id = uploader.upload_file(path)
 
             # Wait for processing (step 1.5)
             media_asset_id = uploader.wait_for_processing(upload_id)
@@ -87,7 +87,7 @@ def main():
             )
 
             mark_as_posted(POSTED_FILE, file_hash, name)
-            print(f"{prefix} — {len(tags)} тегов, rating: {rating} — загружено ✓")
+            print(f"{prefix} -- {len(tags)} тегов, rating: {rating} -- загружено OK")
             uploaded += 1
 
         except Exception as e:
