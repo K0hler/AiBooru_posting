@@ -3,3 +3,5 @@ models/
 __pycache__/
 posted.json
 run.bat
+docs/
+.pytest_cashe/
