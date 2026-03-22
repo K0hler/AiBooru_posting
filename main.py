@@ -72,7 +72,9 @@ def main():
             ai_meta = extract_a1111_metadata(path)
 
             # Upload file (step 1)
-            tag_string = " ".join(tags) + " artist:kohler"
+            tag_string = " ".join(tags)
+            if cfg["artist_tag"]:
+                tag_string += " " + cfg["artist_tag"]
             upload_id = uploader.upload_file(path)
 
             # Wait for processing (step 1.5)

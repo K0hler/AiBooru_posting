@@ -14,4 +14,5 @@ def load_config(env_path: str = ".env") -> dict:
         "login": values["AIBOORU_LOGIN"],
         "api_key": values["AIBOORU_API_KEY"],
         "images_dir": values["IMAGES_DIR"],
+        "artist_tag": values.get("ARTIST_TAG", ""),
     }
