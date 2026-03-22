@@ -1,3 +1,4 @@
 .env
 models/
 __pycache__/
+posted.json
