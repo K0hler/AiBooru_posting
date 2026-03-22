@@ -41,6 +41,19 @@ def main():
         print("Нет новых изображений для загрузки.")
         return
 
+    # Ask user how many images to upload
+    limit_input = input(f"Сколько изображений загрузить? (1-{len(new_files)}, Enter — все): ").strip()
+    if limit_input:
+        try:
+            limit = int(limit_input)
+            if limit < 1:
+                print("Число должно быть >= 1.")
+                return
+            new_files = new_files[:limit]
+        except ValueError:
+            print("Некорректный ввод.")
+            return
+
     uploaded = 0
     skipped = 0
     errors = 0
