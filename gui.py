@@ -1,7 +1,12 @@
 # gui.py
+import queue
+import threading
+from tkinter import filedialog, messagebox
+
 import customtkinter as ctk
-from tkinter import filedialog
 from dotenv import dotenv_values
+
+from worker import UploadWorker
 
 
 class App(ctk.CTk):
@@ -15,6 +20,13 @@ class App(ctk.CTk):
 
         self._build_layout()
         self._prefill_from_env()
+
+        self.event_queue = queue.Queue()
+        self.response_queue = queue.Queue()
+        self.stop_event = threading.Event()
+        self.worker = None
+
+        self.protocol("WM_DELETE_WINDOW", self._on_close)
 
     def _build_layout(self):
         # Main container: left panel + right panel
@@ -98,18 +110,120 @@ class App(ctk.CTk):
             self.folder_entry.configure(state="readonly")
 
     def _on_start(self):
-        pass  # Task 6
+        # Validate folder
+        folder = self.folder_entry.get()
+        if not folder:
+            self._log("Ошибка: выберите папку с изображениями.", "error")
+            return
+
+        # Validate limit
+        limit_text = self.limit_entry.get().strip()
+        limit = None
+        if limit_text:
+            try:
+                limit = int(limit_text)
+                if limit < 1:
+                    raise ValueError
+            except ValueError:
+                self._log("Ошибка: лимит должен быть положительным числом.", "error")
+                return
+
+        # Lock UI
+        self.start_btn.configure(state="disabled")
+        self.browse_btn.configure(state="disabled")
+        self.limit_entry.configure(state="disabled")
+        self.stop_on_error_cb.configure(state="disabled")
+        self.stop_btn.configure(state="normal")
+
+        # Reset state
+        self.stop_event.clear()
+        self.progress_bar.set(0)
+        self.progress_label.configure(text="0 / 0")
+
+        # Start worker
+        self.worker = UploadWorker(
+            images_dir=folder,
+            limit=limit,
+            stop_on_error=self.stop_on_error_var.get(),
+            event_queue=self.event_queue,
+            response_queue=self.response_queue,
+            stop_event=self.stop_event,
+        )
+        self.worker.start()
+        self._poll_queue()
 
     def _on_stop(self):
-        pass  # Task 6
+        self.stop_event.set()
+        self.stop_btn.configure(state="disabled")
+
+    def _poll_queue(self):
+        while True:
+            try:
+                event = self.event_queue.get_nowait()
+            except queue.Empty:
+                break
+
+            etype = event["type"]
+
+            if etype == "log":
+                self._log(event["message"], event.get("level", "info"))
+
+            elif etype == "progress":
+                current = event["current"]
+                total = event["total"]
+                self.progress_bar.set(current / total if total > 0 else 0)
+                self.progress_label.configure(text=f"{current} / {total}")
+
+            elif etype == "started":
+                total = event["total"]
+                self.progress_label.configure(text=f"0 / {total}")
+
+            elif etype == "finished":
+                self._unlock_ui()
+                return  # stop polling
+
+            elif etype == "error_pause":
+                answer = messagebox.askquestion(
+                    "Ошибка при загрузке",
+                    f"Файл: {event['file']}\n{event['message']}\n\nПропустить и продолжить?",
+                    icon="warning",
+                )
+                self.response_queue.put("skip" if answer == "yes" else "abort")
+
+        self.after(100, self._poll_queue)
+
+    def _unlock_ui(self):
+        self.start_btn.configure(state="normal")
+        self.browse_btn.configure(state="normal")
+        self.limit_entry.configure(state="normal")
+        self.stop_on_error_cb.configure(state="normal")
+        self.stop_btn.configure(state="disabled")
+
+    def _on_close(self):
+        if self.worker and self.worker.is_alive():
+            self.stop_event.set()
+            self.worker.join(timeout=3)
+        self.destroy()
 
     def _log(self, message: str, level: str = "info"):
         self.log_box.configure(state="normal")
-        self.log_box.insert("end", message + "\n")
+
+        if level == "error":
+            self.log_box.insert("end", message + "\n")
+            line_idx = int(self.log_box.index("end-2c").split(".")[0])
+            self.log_box.tag_add("error", f"{line_idx}.0", f"{line_idx}.end")
+        elif level == "warning":
+            self.log_box.insert("end", message + "\n")
+            line_idx = int(self.log_box.index("end-2c").split(".")[0])
+            self.log_box.tag_add("warning", f"{line_idx}.0", f"{line_idx}.end")
+        else:
+            self.log_box.insert("end", message + "\n")
+
         # Trim to 5000 lines
         line_count = int(self.log_box.index("end-1c").split(".")[0])
         if line_count > 5000:
             self.log_box.delete("1.0", f"{line_count - 5000}.0")
+
         self.log_box.configure(state="disabled")
         self.log_box.see("end")
 
