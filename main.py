@@ -16,7 +16,11 @@ POSTED_FILE = "posted.json"
 
 
 def main():
-    cfg = load_config()
+    try:
+        cfg = load_config()
+    except ValueError as e:
+        print(f"Ошибка: {e}")
+        sys.exit(1)
 
     # Startup check
     print("Подключение к AIBooru...", end=" ")
